@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced Music Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="player">
+  <h2>🎧 Music Player</h2>
+
+  <!-- Search -->
+  <input type="text" id="search" placeholder="Search song...">
+
+  <!-- Song Info -->
+  <div class="song-info">
+    <p id="title">Select a song</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-container" onclick="setProgress(event)">
+    <div class="progress" id="progress"></div>
+  </div>
+  <div class="time">
+    <span id="current">0:00</span>
+    <span id="duration">0:00</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button onclick="prevSong()">⏮</button>
+    <button onclick="playPause()" id="playBtn">▶️</button>
+    <button onclick="nextSong()">⏭</button>
+  </div>
+
+  <!-- Volume -->
+  <input type="range" min="0" max="1" step="0.01" id="volume">
+
+  <!-- Playlist -->
+  <ul id="playlist"></ul>
+
+</div>
+
+<audio id="audio"></audio>
+
+<script src="script.js"></script>
+</body>
+</html>
