@@ -1,185 +1,178 @@
-// Default tracks (100% full working direct links)
-let defaultSongs = [
-  { name: "Pasoori - Ali Sethi x Shae Gill", file: "https://pub-c5e31b5cdafb419a821a615712e6b010.r2.dev/Pasoori.mp3" },
-  { name: "Dil Diyan Gallan - Atif Aslam", file: "https://pub-c5e31b5cdafb419a821a615712e6b010.r2.dev/Dil-Diyan-Gallan.mp3" },
-  { name: "Tum Hi Ho - Arijit Singh", file: "https://pub-c5e31b5cdafb419a821a615712e6b010.r2.dev/Tum-Hi-Ho.mp3" }
+// 1. Music Player ke saare HTML elements ko select karna
+const audio = new Audio();
+const playBtn = document.querySelector('.fa-pause, .fa-play')?.parentElement || document.querySelectorAll('button')[1]; // Darmiyan wala button
+const prevBtn = document.querySelectorAll('button')[0]; // Pehla button
+const nextBtn = document.querySelectorAll('button')[2]; // Teesra button
+const searchInput = document.querySelector('input[type="text"]');
+const songTitleDisplay = document.querySelector('.song-title, h3, div[style*="bold"]') || document.querySelector('strong') || document.querySelector('h2') || document.getElementsByClassName('SongTitle')[0];
+const progressBar = document.querySelector('input[type="range"]') || document.querySelector('.progress-bar');
+const timeDisplayStart = document.querySelectorAll('span')[0] || { textContent: "" };
+const timeDisplayEnd = document.querySelectorAll('span')[1] || { textContent: "" };
+
+// Maan lete hain aapki playlist ke items par 'song-item' class ha ya woh list items hain
+// Agar aapke HTML mein class kuch aur ha, to querySelectorAll mein '.' ke sath woh naam likhein
+const songItems = document.querySelectorAll('.song-item, li, .playlist-item'); 
+
+// 2. Gaano ki List (Playlist Data) - Aapke UI ke mutabiq spelling aur naam bilkul sahi hone chahiye
+const songsList = [
+    {
+        title: "Pasoori - Ali Sethi x Shae Gill",
+        src: "songs/pasoori.mp3" // Yahan apne folder ke mutabiq sahi audio file ka path dalein
+    },
+    {
+        title: "Dil Diyan Gallan - Atif Aslam",
+        src: "songs/dil_diyan.mp3"
+    },
+    {
+        title: "Tum Hi Ho - Arijit Singh",
+        src: "songs/tum_hi_ho.mp3"
+    }
 ];
 
-let currentList = defaultSongs;
-let currentSong = parseInt(localStorage.getItem("lastSong")) || 0;
+// 3. Track rakhna ke kaunsa gaana chal raha ha
+// localStorage se check karein ge agar user ne pehle koi gaana suna tha (Feature)
+let currentSongIndex = parseInt(localStorage.getItem('lastPlayedSongIndex')) || 0;
 let isPlaying = false;
 
-// DOM Elements
-const audio = document.getElementById("audio");
-const title = document.getElementById("title");
-const playlist = document.getElementById("playlist");
-const search = document.getElementById("search");
-const volume = document.getElementById("volume");
-const progress = document.getElementById("progress");
-const playBtn = document.getElementById("playBtn");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const progressContainer = document.getElementById("progressContainer");
-const currentTimeEl = document.getElementById("current");
-const durationEl = document.getElementById("duration");
-
-function loadPlaylist(list) {
-  currentList = list;
-  playlist.innerHTML = "";
-
-  list.forEach((song, index) => {
-    const li = document.createElement("li");
-    li.innerHTML = `<span>🎵 ${song.name}</span> <small style='float:right; opacity:0.6; font-size:11px;'>Full Song</small>`;
-    if (index === currentSong) li.classList.add("active");
-    li.onclick = () => playSong(index);
-    playlist.appendChild(li);
-  });
-}
-
-function playSong(index) {
-  if (currentList.length === 0 || !currentList[index]) return;
-  
-  currentSong = index;
-  audio.src = currentList[index].file;
-  title.textContent = currentList[index].name;
-  
-  audio.play().then(() => {
-    isPlaying = true;
-    playBtn.textContent = "⏸";
-  }).catch(err => {
-    console.log("Playback error:", err);
-  });
-
-  localStorage.setItem("lastSong", index);
-  
-  const items = playlist.querySelectorAll("li");
-  items.forEach((item, idx) => {
-    if (idx === index) item.classList.add("active");
-    else item.classList.remove("active");
-  });
-}
-
-function playPause() {
-  if (!audio.src) {
-    playSong(currentSong);
-    return;
-  }
-  if (isPlaying) {
-    audio.pause();
-    playBtn.textContent = "▶️";
-  } else {
-    audio.play().catch(err => console.log(err));
-    playBtn.textContent = "⏸";
-  }
-  isPlaying = !isPlaying;
-}
-
-function nextSong() {
-  if (currentList.length === 0) return;
-  currentSong = (currentSong + 1) % currentList.length;
-  playSong(currentSong);
-}
-
-function prevSong() {
-  if (currentList.length === 0) return;
-  currentSong = (currentSong - 1 + currentList.length) % currentList.length;
-  playSong(currentSong);
-}
-
-// Live Search with Local Fallback (Taarqi network browser ko block na kare)
-async function fetchLiveSongs(query) {
-  if (!query) {
-    loadPlaylist(defaultSongs);
-    if (defaultSongs[currentSong]) title.textContent = defaultSongs[currentSong].name;
-    return;
-  }
-
-  title.textContent = "Searching full tracks...";
-
-  try {
-    const response = await fetch(`https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&limit=15`);
+// 4. Gaana Load karne ka function
+function loadSong(index) {
+    currentSongIndex = index;
+    const song = songsList[currentSongIndex];
     
-    if (!response.ok) throw new Error("CORS or Network Blocked");
-    
-    const resData = await response.json();
+    if (song) {
+        audio.src = song.src;
+        // UI par gaane ka naam badalna
+        if (songTitleDisplay) {
+            songTitleDisplay.textContent = song.title;
+        } else {
+            // Agar specific element nahi mila to jo active ha uski text badlein
+            const activeTitle = document.querySelector('div[style*="font-weight: bold"]') || document.querySelector('h3') || document.querySelector('.current-song-title');
+            if (activeTitle) activeTitle.textContent = song.title;
+        }
+        
+        // Playlist mein chalne wale gaane ko alag rang (Highlight) dena
+        songItems.forEach((item, i) => {
+            if (i === currentSongIndex) {
+                item.style.backgroundColor = "rgba(255, 255, 255, 0.2)"; // Highlight color
+            } else {
+                item.style.backgroundColor = ""; // Reset color
+            }
+        });
 
-    if (resData.success && resData.data.results && resData.data.results.length > 0) {
-      currentList = resData.data.results.map(track => {
-        const downloadUrl = track.downloadUrl && track.downloadUrl.length > 0 
-          ? track.downloadUrl[track.downloadUrl.length - 1].url 
-          : "";
-        return {
-          name: `${track.name} - ${track.artists.primary[0]?.name || 'Unknown'}`,
-          file: downloadUrl
-        };
-      }).filter(item => item.file !== "");
-
-      currentSong = 0;
-      loadPlaylist(currentList);
-      title.textContent = `Results for "${query}"`;
-    } else {
-      // Fallback to local search if no results on API
-      localFilter(query);
+        // LocalStorage mein save karna taqi yaad rahe
+        localStorage.setItem('lastPlayedSongIndex', currentSongIndex);
     }
-  } catch (error) {
-    console.log("API Localhost Blocked, Switching to Local Search Mode");
-    localFilter(query);
-  }
 }
 
-// Local Filter Function (Network error par crash hone se bachayega)
-function localFilter(query) {
-  const filtered = defaultSongs.filter(song => 
-    song.name.toLowerCase().includes(query.toLowerCase())
-  );
-  currentSong = 0;
-  loadPlaylist(filtered);
-  title.textContent = filtered.length > 0 ? "Found in backup list" : "Local: No songs found";
+// 5. Play aur Pause ke functions
+function playSong() {
+    isPlaying = true;
+    audio.play().catch(err => console.log("Audio play error: ", err));
+    // Button ka icon badal kar Pause (||) karna
+    const icon = playBtn.querySelector('i') || playBtn;
+    if(icon.classList.contains('fa-play')) {
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+    }
 }
 
-// Event Listeners
-volume.addEventListener("input", () => { audio.volume = volume.value; });
+function pauseSong() {
+    isPlaying = false;
+    audio.pause();
+    // Button ka icon badal kar Play (▶) karna
+    const icon = playBtn.querySelector('i') || playBtn;
+    if(icon.classList.contains('fa-pause')) {
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+    }
+}
 
-audio.addEventListener("timeupdate", () => {
-  const { duration, currentTime } = audio;
-  if (!duration) return;
-  const percent = (currentTime / duration) * 100;
-  progress.style.width = percent + "%";
-  currentTimeEl.textContent = formatTime(currentTime);
-  durationEl.textContent = formatTime(duration);
+// Play/Pause Button Toggle Click
+playBtn.addEventListener('click', () => {
+    if (isPlaying) {
+        pauseSong();
+    } else {
+        playSong();
+    }
 });
 
-function setProgress(e) {
-  const width = progressContainer.clientWidth;
-  const clickX = e.offsetX;
-  if (audio.duration) audio.currentTime = (clickX / width) * audio.duration;
-}
-
-function formatTime(time) {
-  if (isNaN(time)) return "0:00";
-  const minutes = Math.floor(time / 60);
-  const seconds = Math.floor(time % 60);
-  return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-}
-
-let searchTimeout;
-search.addEventListener("input", () => {
-  clearTimeout(searchTimeout);
-  const value = search.value.trim();
-  searchTimeout = setTimeout(() => {
-    fetchLiveSongs(value);
-  }, 500);
+// 6. Next aur Previous Buttons ke Click Events
+nextBtn.addEventListener('click', () => {
+    currentSongIndex = (currentSongIndex + 1) % songsList.length; // Akhri ke baad dobara pehle par le aayega
+    loadSong(currentSongIndex);
+    playSong();
 });
 
-playBtn.addEventListener("click", playPause);
-nextBtn.addEventListener("click", nextSong);
-prevBtn.addEventListener("click", prevSong);
-progressContainer.addEventListener("click", setProgress);
-audio.addEventListener("ended", nextSong);
+prevBtn.addEventListener('click', () => {
+    currentSongIndex = (currentSongIndex - 1 + songsList.length) % songsList.length; // Pehle se piche akhri par le aayega
+    loadSong(currentSongIndex);
+    playSong();
+});
 
-// Start App
-loadPlaylist(currentList);
-if (currentList[currentSong]) {
-  title.textContent = currentList[currentSong].name;
-  audio.src = currentList[currentSong].file;
+// 7. Playlist ke Items par Click karne ka Feature
+songItems.forEach((element, index) => {
+    element.addEventListener('click', () => {
+        loadSong(index);
+        playSong();
+    });
+    // Cursor ko pointer banana taqi click ka pata chale
+    element.style.cursor = "pointer"; 
+});
+
+// 8. LIVE SEARCH FILTER FEATURE (Aapka Naya Feature)
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        
+        songItems.forEach((item, index) => {
+            // Gaane ka text nikalna
+            const songText = item.textContent.toLowerCase();
+            
+            // Agar search term gaane ke naam mein ha to dikhao, warna chhupa do
+            if (songText.includes(searchTerm)) {
+                item.style.display = "flex"; // Show
+            } else {
+                item.style.display = "none"; // Hide
+            }
+        });
+    });
 }
+
+// 9. Progress Bar Aur Time Update (Optional par behtar UI ke liye)
+audio.addEventListener('timeupdate', () => {
+    if (audio.duration) {
+        // Progress bar ki value update karna
+        const progressPercent = (audio.currentTime / audio.duration) * 100;
+        if (progressBar) progressBar.value = progressPercent;
+        
+        // Time display set karna (0:00)
+        let currentMins = Math.floor(audio.currentTime / 60);
+        let currentSecs = Math.floor(audio.currentTime % 60);
+        if (currentSecs < 10) currentSecs = `0${currentSecs}`;
+        if (timeDisplayStart) timeDisplayStart.textContent = `${currentMins}:${currentSecs}`;
+        
+        let durationMins = Math.floor(audio.duration / 60);
+        let durationSecs = Math.floor(audio.duration % 60);
+        if (durationSecs < 10) durationSecs = `0${durationSecs}`;
+        if (timeDisplayEnd && !isNaN(durationMins)) timeDisplayEnd.textContent = `${durationMins}:${durationSecs}`;
+    }
+});
+
+// Progress Bar ko pakad kar aage piche karne se gaana aage piche hona
+if (progressBar) {
+    progressBar.addEventListener('input', (e) => {
+        const seekTime = (e.target.value / 100) * audio.duration;
+        audio.currentTime = seekTime;
+    });
+}
+
+// Gaana khatam hone par automatic agla gaana chalna
+audio.addEventListener('ended', () => {
+    currentSongIndex = (currentSongIndex + 1) % songsList.length;
+    loadSong(currentSongIndex);
+    playSong();
+});
+
+
+// 10. Player Shuru hote hi Pehla (ya pichla chora hua) gaana load karna
+loadSong(currentSongIndex);
