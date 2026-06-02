@@ -20,7 +20,9 @@ An advanced, responsive web-based audio player built using **HTML, CSS, and Java
 * **Logic & API Handling:** Modern JavaScript (ES6+ Async/Fetch API)
 * **External API:** Saavn Music Developer API (For real-time streamable audio data fetching)
 
----
+## Pictures:
+<img width="395" height="402" alt="Screenshot 2026-06-02 204324" src="https://github.com/user-attachments/assets/aeceeaae-8b48-445c-85cd-c40a424e4144" />
+<img width="333" height="395" alt="Screenshot 2026-06-02 204426" src="https://github.com/user-attachments/assets/5c7394d0-746a-476c-9a52-e88d5dfbbc62" />
 
 ## 📂 Project Directory Structure
 
@@ -33,7 +35,4 @@ simple-audio-player/
 ├── README.md           # Project documentation
 └── images/
     └── favicon.png     # Browser tab brand icon (Favicon)
-## Pictures:
-<img width="395" height="402" alt="Screenshot 2026-06-02 204324" src="https://github.com/user-attachments/assets/aeceeaae-8b48-445c-85cd-c40a424e4144" />
-<img width="333" height="395" alt="Screenshot 2026-06-02 204426" src="https://github.com/user-attachments/assets/5c7394d0-746a-476c-9a52-e88d5dfbbc62" />
 
